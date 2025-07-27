@@ -603,10 +603,10 @@ function toggleChatMenu() {
     // Check if entry is suitable for chat
     const entryText = editor.value.trim();
     
-    if (entryText.startsWith("Hi. My name is Farza.") || 
-        entryText.startsWith("hi. my name is farza.")) {
-        showCustomAlert("Sorry, you can't chat with the guide. Please write your own entry.", () => {
-            console.log('Setting focus after Farza alert');
+    if (entryText.startsWith("Welcome to Freewrite for Windows!") || 
+        entryText.startsWith("welcome to freewrite for windows!")) {
+        showCustomAlert("Ready to start your freewriting journey? Clear this text and begin writing your thoughts.", () => {
+            console.log('Setting focus after welcome message');
             editor.focus();
             // Force cursor to end
             const len = editor.value.length;
