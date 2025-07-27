@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, shell, globalShortcut } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell, globalShortcut, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -30,9 +30,10 @@ function createWindow() {
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
   
-  // Wait until the content is ready, then show window
+  // Wait until the content is ready, then show window and set fullscreen
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    mainWindow.setFullScreen(true);
   });
   
   // Create application menu (empty)
@@ -226,4 +227,22 @@ ipcMain.on('load-welcome-message', (event) => {
     
     event.reply('welcome-message-loaded', { success: true, content });
   });
+});
+
+// Listen for system theme detection request
+ipcMain.on('get-system-theme', (event) => {
+  event.reply('system-theme-detected', {
+    shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+    themeSource: nativeTheme.themeSource
+  });
+});
+
+// Listen for theme changes
+nativeTheme.on('updated', () => {
+  if (mainWindow) {
+    mainWindow.webContents.send('system-theme-changed', {
+      shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+      themeSource: nativeTheme.themeSource
+    });
+  }
 }); 

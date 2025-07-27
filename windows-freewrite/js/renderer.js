@@ -3,11 +3,10 @@ const { ipcRenderer } = require('electron');
 // DOM Elements
 const editor = document.getElementById('editor');
 const placeholder = document.getElementById('placeholder');
-const fontButton = document.getElementById('font-btn');
+const geistFontButton = document.getElementById('geist-font-btn');
+const jetbrainsFontButton = document.getElementById('jetbrains-font-btn');
+const georgiaFontButton = document.getElementById('georgia-font-btn');
 const fontSizeButton = document.getElementById('font-size-btn');
-const systemFontButton = document.getElementById('system-font-btn');
-const serifFontButton = document.getElementById('serif-font-btn');
-const randomFontButton = document.getElementById('random-font-btn');
 const timerButton = document.getElementById('timer-btn');
 const themeButton = document.getElementById('theme-btn');
 const fullscreenButton = document.getElementById('fullscreen-btn');
@@ -23,8 +22,8 @@ const closeSidebarButton = document.getElementById('close-sidebar-btn');
 const buttonSound = new Audio('https://pomofocus.io/audios/general/button.wav');
 
 // State variables
-let selectedFont = 'Lato-Regular';
-let fontSize = 18;
+let selectedFont = 'georgia';
+let fontSize = 20;
 let timeRemaining = 900; // 15 minutes in seconds
 let timerIsRunning = false;
 let timerInterval = null;
@@ -67,17 +66,9 @@ Here's my journal entry:`;
 
 // Available fonts
 const fonts = {
-    lato: 'Lato-Regular',
-    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    serif: 'Times New Roman, serif',
-    random: [
-        'Noto Serif Kannada',
-        'Georgia',
-        'Palatino',
-        'Garamond', 
-        'Bookman',
-        'Courier New'
-    ]
+    geist: 'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    jetbrains: '"JetBrains Mono", "Consolas", "Monaco", "Courier New", monospace',
+    georgia: 'Georgia, "Times New Roman", Times, serif'
 };
 
 // Initialize
@@ -90,14 +81,22 @@ document.addEventListener('DOMContentLoaded', () => {
     placeholder.textContent = placeholderOptions[Math.floor(Math.random() * placeholderOptions.length)];
     
     // Apply initial font and size
-    setFont('random'); // Set to random initially to match screenshot
-    setFontSize(18);
+    setFont('georgia'); // Set to Georgia as default
+    setFontSize(20);
     
     // Hide placeholder since we have initial text
     updatePlaceholderVisibility();
     
+    // Initialize markdown rendering
+    setTimeout(() => {
+        renderMarkdown();
+    }, 100);
+    
     // Get initial fullscreen state
     ipcRenderer.send('get-fullscreen-state');
+    
+    // Get system theme
+    ipcRenderer.send('get-system-theme');
 });
 
 // Listen for fullscreen state response
@@ -117,7 +116,11 @@ function initializeEventListeners() {
     editor.addEventListener('input', () => {
         updatePlaceholderVisibility();
         saveCurrentEntry();
+        handleAutoScroll();
+        // No markdown formatting for now - just basic typing
     });
+    
+    // No more scroll sync needed!
     
     editor.addEventListener('focus', () => {
         updatePlaceholderVisibility();
@@ -127,16 +130,51 @@ function initializeEventListeners() {
         saveCurrentEntry(); // Save when editor loses focus
     });
     
+    // Handle keyboard events for auto-scroll and shortcuts
+    editor.addEventListener('keydown', (e) => {
+        // Handle keyboard shortcuts
+        if (e.ctrlKey && e.altKey && e.key === 'f') {
+            e.preventDefault();
+            toggleTimer();
+            return;
+        }
+        
+        // Handle markdown formatting shortcuts
+        if (e.ctrlKey && !e.altKey) {
+            switch(e.key) {
+                case 'b':
+                    e.preventDefault();
+                    insertMarkdownFormat('**', '**', 'bold text');
+                    return;
+                case 'i':
+                    e.preventDefault();
+                    insertMarkdownFormat('*', '*', 'italic text');
+                    return;
+                case 'u':
+                    e.preventDefault();
+                    insertMarkdownFormat('<u>', '</u>', 'underlined text');
+                    return;
+            }
+        }
+        
+        // Trigger typewriter scroll on navigation keys and typing
+        const navigationKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
+        if (navigationKeys.includes(e.key) || e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') {
+            setTimeout(() => {
+                handleAutoScroll();
+            }, 10);
+        }
+    });
+    
     // Font size button
     fontSizeButton.addEventListener('click', (e) => {
         togglePopup(fontSizePopup);
     });
     
     // Font buttons
-    fontButton.addEventListener('click', () => setFont('lato'));
-    systemFontButton.addEventListener('click', () => setFont('system'));
-    serifFontButton.addEventListener('click', () => setFont('serif'));
-    randomFontButton.addEventListener('click', () => setFont('random'));
+    geistFontButton.addEventListener('click', () => setFont('geist'));
+    jetbrainsFontButton.addEventListener('click', () => setFont('jetbrains'));
+    georgiaFontButton.addEventListener('click', () => setFont('georgia'));
     
     // Font size options
     document.querySelectorAll('.size-option').forEach(option => {
@@ -175,8 +213,13 @@ function initializeEventListeners() {
         }
     });
     
-    // Add escape key handler
+    // Add global keyboard handlers
     document.addEventListener('keydown', (e) => {
+        // Don't handle shortcuts when typing in editor, except specific ones
+        if (document.activeElement === editor) {
+            return; // Let editor handle its own shortcuts
+        }
+        
         if (e.key === 'Escape') {
             // Close any open popups first
             const chatPopup = document.querySelector('.chat-popup');
@@ -214,7 +257,7 @@ function initializeEventListeners() {
 
 // Update placeholder visibility
 function updatePlaceholderVisibility() {
-    if (editor.value.trim() === '') {
+    if (editor.textContent.trim() === '') {
         placeholder.style.display = 'block';
     } else {
         placeholder.style.display = 'none';
@@ -229,25 +272,19 @@ function togglePopup(popup) {
 // Set font
 function setFont(fontType) {
     // Deselect previous font
-    fontButton.style.fontWeight = 'normal';
-    systemFontButton.style.fontWeight = 'normal';
-    serifFontButton.style.fontWeight = 'normal';
-    randomFontButton.style.fontWeight = 'normal';
+    geistFontButton.style.fontWeight = 'normal';
+    jetbrainsFontButton.style.fontWeight = 'normal';
+    georgiaFontButton.style.fontWeight = 'normal';
     
-    if (fontType === 'lato') {
-        selectedFont = fonts.lato;
-        fontButton.style.fontWeight = 'bold';
-    } else if (fontType === 'system') {
-        selectedFont = fonts.system;
-        systemFontButton.style.fontWeight = 'bold';
-    } else if (fontType === 'serif') {
-        selectedFont = fonts.serif;
-        serifFontButton.style.fontWeight = 'bold';
-    } else if (fontType === 'random') {
-        const randomFont = fonts.random[Math.floor(Math.random() * fonts.random.length)];
-        selectedFont = randomFont;
-        randomFontButton.style.fontWeight = 'bold';
-        randomFontButton.textContent = `Random [${randomFont}]`;
+    if (fontType === 'geist') {
+        selectedFont = fonts.geist;
+        geistFontButton.style.fontWeight = 'bold';
+    } else if (fontType === 'jetbrains') {
+        selectedFont = fonts.jetbrains;
+        jetbrainsFontButton.style.fontWeight = 'bold';
+    } else if (fontType === 'georgia') {
+        selectedFont = fonts.georgia;
+        georgiaFontButton.style.fontWeight = 'bold';
     }
     
     editor.style.fontFamily = selectedFont;
@@ -401,21 +438,23 @@ function loadEntry(entry) {
     
     // Load content
     if (entry.content) {
-        editor.value = entry.content;
+        editor.textContent = entry.content;
     } else {
         ipcRenderer.send('load-entry', { filename: entry.filename });
     }
     
     // Update UI
     updatePlaceholderVisibility();
+    renderMarkdown();
     renderEntries();
 }
 
 // Receive loaded entry from main process
 ipcRenderer.on('entry-loaded', (event, data) => {
     if (data.success) {
-        editor.value = data.content;
+        editor.textContent = data.content;
         updatePlaceholderVisibility();
+        renderMarkdown();
     }
 });
 
@@ -455,10 +494,10 @@ function createNewEntry() {
     if (entries.length === 1) {
         // Request the welcome message from main process
         ipcRenderer.send('load-welcome-message');
-    } else {
-        // Clear editor
-        editor.value = '\n\n';
-    }
+            } else {
+            // Clear editor
+            editor.textContent = '\n\n';
+        }
     
     updatePlaceholderVisibility();
     
@@ -469,8 +508,9 @@ function createNewEntry() {
 // Receive welcome message from main process
 ipcRenderer.on('welcome-message-loaded', (event, data) => {
     if (data.success) {
-        editor.value = '\n\n' + data.content;
+        editor.textContent = '\n\n' + data.content;
         updatePlaceholderVisibility();
+        renderMarkdown();
         
         // Save the entry with welcome message
         saveCurrentEntry();
@@ -484,7 +524,7 @@ function saveCurrentEntry() {
     console.log('Saving entry:', selectedEntry.filename); // Debug log
     
     // Update preview text
-    const content = editor.value;
+    const content = editor.textContent || editor.innerText || '';
     const preview = content.replace(/\n/g, ' ').trim();
     const truncated = preview.length > 30 ? preview.substring(0, 30) + '...' : preview;
     
@@ -682,14 +722,25 @@ function openClaude() {
 
 // Theme functions
 function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeButton(savedTheme);
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeButton(savedTheme);
+    }
+    // If no saved theme, wait for system theme detection
 }
 
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    let newTheme;
+    
+    if (currentTheme === 'light') {
+        newTheme = 'dark';
+    } else if (currentTheme === 'dark') {
+        newTheme = 'vintage';
+    } else {
+        newTheme = 'light';
+    }
     
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
@@ -697,8 +748,109 @@ function toggleTheme() {
 }
 
 function updateThemeButton(theme) {
-    themeButton.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    if (theme === 'dark') {
+        themeButton.textContent = 'Vintage Mode';
+    } else if (theme === 'vintage') {
+        themeButton.textContent = 'Light Mode';
+    } else {
+        themeButton.textContent = 'Dark Mode';
+    }
 }
+
+// Listen for system theme detection
+ipcRenderer.on('system-theme-detected', (event, data) => {
+    const savedTheme = localStorage.getItem('theme');
+    if (!savedTheme) {
+        // No saved preference, use system theme
+        const systemTheme = data.shouldUseDarkColors ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', systemTheme);
+        updateThemeButton(systemTheme);
+    }
+});
+
+// Listen for system theme changes
+ipcRenderer.on('system-theme-changed', (event, data) => {
+    const savedTheme = localStorage.getItem('theme');
+    if (!savedTheme) {
+        // No saved preference, follow system theme
+        const systemTheme = data.shouldUseDarkColors ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', systemTheme);
+        updateThemeButton(systemTheme);
+    }
+});
+
+// Typewriter scroll functionality for contentEditable
+function handleAutoScroll() {
+    if (document.activeElement !== editor) {
+        return;
+    }
+    
+    const editorHeight = editor.clientHeight;
+    const targetPosition = editorHeight * 0.4;
+    
+    // Get current cursor position using selection API
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const editorRect = editor.getBoundingClientRect();
+    
+    // Calculate cursor position relative to editor
+    const cursorTop = rect.top - editorRect.top + editor.scrollTop;
+    const currentCursorPosition = cursorTop - editor.scrollTop;
+    
+         // If cursor is getting too far from target position, scroll
+     if (Math.abs(currentCursorPosition - targetPosition) > 20) {
+         const idealScrollTop = cursorTop - targetPosition;
+         editor.scrollTop = Math.max(0, idealScrollTop);
+     }
+}
+
+// Markdown formatting function for contentEditable
+function insertMarkdownFormat(startTag, endTag, placeholderText) {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    
+    let replacement;
+    if (selectedText) {
+        replacement = startTag + selectedText + endTag;
+    } else {
+        replacement = startTag + placeholderText + endTag;
+    }
+    
+    // Delete current selection and insert new text
+    range.deleteContents();
+    const textNode = document.createTextNode(replacement);
+    range.insertNode(textNode);
+    
+    // Set cursor position
+    const newRange = document.createRange();
+    if (selectedText) {
+        newRange.setStart(textNode, replacement.length);
+        newRange.setEnd(textNode, replacement.length);
+    } else {
+        newRange.setStart(textNode, startTag.length);
+        newRange.setEnd(textNode, startTag.length + placeholderText.length);
+    }
+    
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    
+    editor.focus();
+    saveCurrentEntry();
+    renderMarkdown();
+    updatePlaceholderVisibility();
+}
+
+// Simple function - no markdown formatting for now, just basic editor
+function renderMarkdown() {
+    // Do nothing - just let the contentEditable work normally
+    // We'll add markdown back later in a better way
+}
+
+// No need for scroll sync anymore - only one element!
 
 // Also add focus tracking to the editor globally
 editor.addEventListener('focus', () => {

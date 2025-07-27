@@ -2,9 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Freewrite</title>
   <link rel="stylesheet" href="css/styles.css">
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
 </head>
 <body>
   <div class="app-container">
@@ -13,23 +14,21 @@
       <!-- Editor area -->
       <div class="editor-container">
         <div id="placeholder" class="placeholder">Begin writing</div>
-        <textarea id="editor" class="editor" spellcheck="false">
+        <div id="editor" class="editor" contenteditable="true" spellcheck="false" aria-label="Markdown editor" data-placeholder="Begin writing">
 
-farza is the 🐕</textarea>
+farza is the 🐕</div>
       </div>
       
       <!-- Bottom toolbar -->
       <div class="bottom-toolbar">
         <div class="left-controls">
-          <span id="font-size-btn" class="control-item">18px</span>
+          <span id="font-size-btn" class="control-item">20px</span>
           <span class="control-separator">•</span>
-          <span id="font-btn" class="control-item">Lato</span>
+          <span id="geist-font-btn" class="control-item">Geist</span>
           <span class="control-separator">•</span>
-          <span id="system-font-btn" class="control-item">System</span>
+          <span id="jetbrains-font-btn" class="control-item">JetBrains Mono</span>
           <span class="control-separator">•</span>
-          <span id="serif-font-btn" class="control-item">Serif</span>
-          <span class="control-separator">•</span>
-          <span id="random-font-btn" class="control-item">Random [Noto Serif Kannada]</span>
+          <span id="georgia-font-btn" class="control-item">Georgia</span>
         </div>
         <div class="right-controls">
           <span id="timer-btn" class="control-item">15:00</span>
@@ -50,11 +49,8 @@ farza is the 🐕</textarea>
       <div id="font-size-popup" class="popup">
         <div class="popup-content">
           <button class="size-option" data-size="16">16px</button>
-          <button class="size-option" data-size="18">18px</button>
           <button class="size-option" data-size="20">20px</button>
-          <button class="size-option" data-size="22">22px</button>
           <button class="size-option" data-size="24">24px</button>
-          <button class="size-option" data-size="26">26px</button>
         </div>
       </div>
 
@@ -71,6 +67,7 @@ farza is the 🐕</textarea>
     </div>
   </div>
   
+  <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
   <script src="js/renderer.js"></script>
 </body>
 </html> 
