@@ -427,18 +427,20 @@ body, html {
   height: 100%;
   border: none;
   outline: none;
-  padding: 30px 20px;
+  padding: 35vh 20px 65vh 20px; /* Position content to start at ~40% from top */
   font-size: 20px;
-  line-height: 1.6;
+  line-height: 1.8; /* Improved line spacing */
   background-color: transparent;
   font-family: 'Georgia', 'Times New Roman', Times, serif;
   color: var(--text-color); /* Show the text! */
   overflow-y: auto;
+  overflow-x: hidden;
   caret-color: var(--text-color);
-  max-width: 800px;
+  max-width: 600px; /* Narrower for better focus */
   margin: 0 auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-color) transparent;
+  scrollbar-width: none; /* Hide scrollbars for clean look */
+  -ms-overflow-style: none;
+  scroll-behavior: smooth; /* Smooth typewriter scrolling */
   transition: color 0.3s ease;
   position: relative;
   z-index: 1;
@@ -641,6 +643,38 @@ body.timer-complete .editor {
 .editor {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Markdown styling in editor */
+.editor h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin: 0.5em 0;
+  color: var(--text-color);
+}
+
+.editor h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.4em 0;
+  color: var(--text-color);
+}
+
+.editor h3 {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 0.3em 0;
+  color: var(--text-color);
+}
+
+.editor strong {
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.editor em {
+  font-style: italic;
+  color: var(--text-color);
 }
 
 /* Also hide scrollbar from preview */

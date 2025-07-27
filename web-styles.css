@@ -1,0 +1,466 @@
+/* Web version of Freewrite styles */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: rgb(51, 51, 51);
+  --sidebar-bg: #ffffff;
+  --sidebar-shadow: rgba(0, 0, 0, 0.1);
+  --placeholder-color: rgba(0, 0, 0, 0.3);
+  --entry-hover-bg: rgba(0, 0, 0, 0.05);
+  --entry-selected-bg: rgba(0, 0, 0, 0.1);
+  --entry-preview-color: #666;
+  --separator-color: rgba(0, 0, 0, 0.1);
+  --scrollbar-color: rgba(0, 0, 0, 0.1);
+  --toolbar-bg: #ffffff;
+  --toolbar-border: rgba(0, 0, 0, 0.05);
+  --popup-bg: #ffffff;
+  --popup-border: rgba(0, 0, 0, 0.1);
+  --control-hover: rgba(0, 0, 0, 0.07);
+  --control-text: rgba(0, 0, 0, 0.6);
+  --control-text-hover: rgba(0, 0, 0, 0.9);
+  --control-separator: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] {
+  --bg-color: #1e1e1e;
+  --sidebar-bg: #252525;
+  --sidebar-shadow: rgba(0, 0, 0, 0.3);
+  --entry-hover-bg: rgba(255, 255, 255, 0.05);
+  --entry-selected-bg: rgba(255, 255, 255, 0.1);
+  --scrollbar-color: rgba(255, 255, 255, 0.2);
+  --toolbar-bg: #1e1e1e;
+  --toolbar-border: rgba(255, 255, 255, 0.05);
+  --popup-bg: #252525;
+  --popup-border: rgba(255, 255, 255, 0.1);
+  --control-hover: rgba(255, 255, 255, 0.1);
+  --text-color: #ffffff;
+  --placeholder-color: rgba(255, 255, 255, 0.3);
+  --entry-preview-color: rgba(255, 255, 255, 0.6);
+  --control-text: rgba(255, 255, 255, 0.6);
+  --control-text-hover: rgba(255, 255, 255, 0.9);
+  --control-separator: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="vintage"] {
+  --bg-color: #2c1810;
+  --sidebar-bg: #1f0f08;
+  --sidebar-shadow: rgba(0, 0, 0, 0.6);
+  --entry-hover-bg: rgba(139, 101, 67, 0.2);
+  --entry-selected-bg: rgba(139, 101, 67, 0.3);
+  --scrollbar-color: rgba(139, 101, 67, 0.5);
+  --toolbar-bg: #1a0e06;
+  --toolbar-border: rgba(139, 101, 67, 0.4);
+  --popup-bg: #1a0e06;
+  --popup-border: rgba(139, 101, 67, 0.5);
+  --control-hover: rgba(139, 101, 67, 0.3);
+  --text-color: #d4a574;
+  --placeholder-color: rgba(212, 165, 116, 0.5);
+  --entry-preview-color: rgba(212, 165, 116, 0.8);
+  --control-text: rgba(212, 165, 116, 0.7);
+  --control-text-hover: rgba(212, 165, 116, 1);
+  --control-separator: rgba(139, 101, 67, 0.6);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  overflow: hidden;
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Vintage theme special styling */
+[data-theme="vintage"] body {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(139, 101, 67, 0.1) 1px, transparent 0);
+  background-size: 20px 20px;
+  background-color: #2c1810;
+}
+
+[data-theme="vintage"] .editor {
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.3);
+  background-image: 
+    linear-gradient(to bottom, transparent 95%, rgba(139, 101, 67, 0.2) 100%);
+  background-size: 100% 1.6em;
+  background-attachment: local;
+  color: #d4a574;
+}
+
+[data-theme="vintage"] .placeholder {
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  font-style: italic;
+  text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.3);
+  color: rgba(212, 165, 116, 0.5);
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+  transition: background-color 0.3s ease;
+}
+
+.editor-container {
+  flex: 1;
+  position: relative;
+  padding: 60px 40px 80px 40px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.editor-wrapper {
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .editor-container {
+    padding: 40px 20px 80px 20px;
+  }
+  
+  .editor-wrapper {
+    max-width: 100%;
+  }
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 20px;
+  line-height: 1.8;
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  background: transparent;
+  color: var(--text-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 60% 0; /* Add padding so typewriter mode has space to work */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+
+.editor::-webkit-scrollbar {
+  display: none;
+}
+
+/* Markdown styling in editor */
+.editor h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin: 0.5em 0;
+  color: var(--text-color);
+}
+
+.editor h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.4em 0;
+  color: var(--text-color);
+}
+
+.editor h3 {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 0.3em 0;
+  color: var(--text-color);
+}
+
+.editor strong {
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.editor em {
+  font-style: italic;
+  color: var(--text-color);
+}
+
+.placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 20px;
+  color: var(--placeholder-color);
+  pointer-events: none;
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  line-height: 1.6;
+  z-index: 1;
+}
+
+.placeholder.hidden {
+  display: none;
+}
+
+.bottom-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: var(--toolbar-bg);
+  border-top: 1px solid var(--toolbar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 12px;
+  z-index: 100;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.left-controls, .right-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-item {
+  cursor: pointer;
+  color: var(--control-text);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  padding: 6px 8px;
+  border-radius: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.control-item:hover {
+  color: var(--control-text-hover);
+  background-color: var(--control-hover);
+}
+
+.control-item.active {
+  color: var(--control-text-hover);
+  font-weight: 500;
+}
+
+.control-separator {
+  color: var(--control-separator);
+  font-weight: normal;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.popup {
+  position: fixed;
+  bottom: 60px;
+  left: 20px;
+  background: var(--popup-bg);
+  border: 1px solid var(--popup-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.popup.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.popup-content {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.size-option {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  color: var(--control-text);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.size-option:hover {
+  background-color: var(--control-hover);
+  color: var(--control-text-hover);
+}
+
+.size-option.active {
+  background-color: var(--entry-selected-bg);
+  color: var(--control-text-hover);
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 350px;
+  height: 100vh;
+  background: var(--sidebar-bg);
+  border-left: 1px solid var(--toolbar-border);
+  box-shadow: -4px 0 20px var(--sidebar-shadow);
+  transform: translateX(100%);
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.visible {
+  transform: translateX(0);
+}
+
+.sidebar.hidden {
+  transform: translateX(100%);
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--separator-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+#close-sidebar-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--control-text);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#close-sidebar-btn:hover {
+  background-color: var(--control-hover);
+  color: var(--control-text-hover);
+}
+
+.entries-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.entry-item {
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background-color 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.entry-item:hover {
+  background-color: var(--entry-hover-bg);
+}
+
+.entry-item.selected {
+  background-color: var(--entry-selected-bg);
+  border-color: var(--separator-color);
+}
+
+.entry-title {
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.entry-preview {
+  color: var(--entry-preview-color);
+  font-size: 12px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.entry-date {
+  color: var(--entry-preview-color);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* Timer styles */
+.timer-active {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* Font classes */
+.font-geist {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.font-jetbrains {
+  font-family: 'JetBrains Mono', "Consolas", "Monaco", "Courier New", monospace !important;
+}
+
+.font-georgia {
+  font-family: 'Georgia', "Times New Roman", Times, serif !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+  }
+  
+  .bottom-toolbar {
+    padding: 0 10px;
+    font-size: 11px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 50px;
+  }
+  
+  .left-controls, .right-controls {
+    gap: 6px;
+  }
+  
+  .control-item {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+} 

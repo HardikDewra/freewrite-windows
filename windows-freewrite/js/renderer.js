@@ -116,8 +116,10 @@ function initializeEventListeners() {
     editor.addEventListener('input', () => {
         updatePlaceholderVisibility();
         saveCurrentEntry();
-        handleAutoScroll();
-        // No markdown formatting for now - just basic typing
+        
+        // Debounced typewriter scroll for smooth experience
+        clearTimeout(window.typewriterTimeout);
+        window.typewriterTimeout = setTimeout(typewriterScroll, 100);
     });
     
     // No more scroll sync needed!
@@ -157,12 +159,10 @@ function initializeEventListeners() {
             }
         }
         
-        // Trigger typewriter scroll on navigation keys and typing
-        const navigationKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
-        if (navigationKeys.includes(e.key) || e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') {
-            setTimeout(() => {
-                handleAutoScroll();
-            }, 10);
+        // Trigger typewriter scroll on navigation keys and Enter
+        if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+            e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            setTimeout(typewriterScroll, 10);
         }
     });
     
@@ -443,18 +443,28 @@ function loadEntry(entry) {
         ipcRenderer.send('load-entry', { filename: entry.filename });
     }
     
+    // Reset scroll position - CSS padding handles positioning
+    editor.scrollTop = 0;
+    
     // Update UI
     updatePlaceholderVisibility();
     renderMarkdown();
     renderEntries();
+    
+    // Apply typewriter position after content loads
+    setTimeout(typewriterScroll, 50);
 }
 
 // Receive loaded entry from main process
 ipcRenderer.on('entry-loaded', (event, data) => {
     if (data.success) {
         editor.textContent = data.content;
+        editor.scrollTop = 0; // Reset scroll position
         updatePlaceholderVisibility();
         renderMarkdown();
+        
+        // Apply typewriter position after content loads
+        setTimeout(typewriterScroll, 50);
     }
 });
 
@@ -498,6 +508,9 @@ function createNewEntry() {
             // Clear editor
             editor.textContent = '\n\n';
         }
+    
+    // Reset scroll position - CSS padding handles initial positioning
+    editor.scrollTop = 0;
     
     updatePlaceholderVisibility();
     
@@ -779,32 +792,54 @@ ipcRenderer.on('system-theme-changed', (event, data) => {
     }
 });
 
-// Typewriter scroll functionality for contentEditable
-function handleAutoScroll() {
-    if (document.activeElement !== editor) {
-        return;
-    }
-    
-    const editorHeight = editor.clientHeight;
-    const targetPosition = editorHeight * 0.4;
-    
-    // Get current cursor position using selection API
+// Professional typewriter scroll functionality (same as web app)
+function typewriterScroll() {
+    // Get cursor position
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return;
     
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const editorRect = editor.getBoundingClientRect();
-    
-    // Calculate cursor position relative to editor
-    const cursorTop = rect.top - editorRect.top + editor.scrollTop;
-    const currentCursorPosition = cursorTop - editor.scrollTop;
-    
-         // If cursor is getting too far from target position, scroll
-     if (Math.abs(currentCursorPosition - targetPosition) > 20) {
-         const idealScrollTop = cursorTop - targetPosition;
-         editor.scrollTop = Math.max(0, idealScrollTop);
-     }
+    try {
+        const range = selection.getRangeAt(0);
+        
+        // Create a temporary element to measure cursor position
+        const span = document.createElement('span');
+        span.style.position = 'absolute';
+        span.style.visibility = 'hidden';
+        span.textContent = '|';
+        
+        // Insert at cursor position
+        const clonedRange = range.cloneRange();
+        clonedRange.insertNode(span);
+        
+        // Get the actual pixel position of the cursor
+        const spanRect = span.getBoundingClientRect();
+        const editorRect = editor.getBoundingClientRect();
+        
+        // Calculate target position (40% from top of editor)
+        const targetY = editorRect.top + (editorRect.height * 0.4);
+        const currentY = spanRect.top;
+        
+        // Calculate how much to scroll
+        const scrollOffset = currentY - targetY;
+        
+        // Scroll to keep cursor at target position
+        editor.scrollTop += scrollOffset;
+        
+        // Clean up
+        span.remove();
+        
+    } catch (e) {
+        // If anything goes wrong, fall back to simple line-based calculation
+        const lines = editor.textContent.split('\n');
+        const currentLineNumber = Math.max(0, lines.length - 1);
+        const lineHeight = 20 * 1.8; // fontSize * line-height
+        const editorHeight = editor.getBoundingClientRect().height;
+        const targetY = editorHeight * 0.4;
+        
+        // Scroll so current line is at 40% from top
+        const currentLineY = currentLineNumber * lineHeight;
+        editor.scrollTop = currentLineY - targetY;
+    }
 }
 
 // Markdown formatting function for contentEditable

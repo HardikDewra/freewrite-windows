@@ -1,0 +1,11 @@
+{
+  "name": "freewrite-windows",
+  "version": "1.0.0",
+  "description": "Freewrite Electron App for Windows",
+  "scripts": {
+    "start": "cd windows-freewrite && npm start",
+    "install": "cd windows-freewrite && npm install"
+  },
+  "author": "",
+  "license": "MIT"
+} 
