@@ -16,6 +16,9 @@ const entriesList = document.getElementById('entries-list');
 const fontSizePopup = document.getElementById('font-size-popup');
 const sidebar = document.getElementById('sidebar');
 const closeSidebarButton = document.getElementById('close-sidebar-btn');
+const downloadButton = document.getElementById('download-btn');
+const uploadButton = document.getElementById('upload-btn');
+const fileInput = document.getElementById('file-input');
 
 // State variables
 let selectedFont = 'georgia';
@@ -49,6 +52,7 @@ const fonts = {
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     loadEntries();
+    loadCurrentContent(); // Restore content from previous session
     initializeEventListeners();
     initializeTheme();
     
@@ -99,10 +103,16 @@ function initializeEventListeners() {
     // Sidebar
     closeSidebarButton.addEventListener('click', closeSidebar);
     
+    // Download/Upload functionality
+    downloadButton.addEventListener('click', downloadMarkdown);
+    uploadButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', uploadMarkdown);
+    
     // Editor events
     editor.addEventListener('input', () => {
         updatePlaceholderVisibility();
         saveCurrentEntry();
+        saveCurrentContent(); // Auto-save current content for persistence
         renderMarkdown();
         
         // Debounced typewriter scroll for smooth experience
@@ -323,6 +333,7 @@ function createNewEntry() {
     
     editor.textContent = '';
     editor.scrollTop = 0; // Reset scroll position
+    localStorage.removeItem('freewrite-current-content'); // Clear auto-saved content
     updatePlaceholderVisibility();
     editor.focus();
     selectedEntry = null;
@@ -535,6 +546,139 @@ function renderMarkdown() {
             }
         }
     }
+}
+
+// Auto-save current content for persistence across refreshes
+function saveCurrentContent() {
+    const content = editor.textContent;
+    localStorage.setItem('freewrite-current-content', content);
+}
+
+// Load current content from previous session
+function loadCurrentContent() {
+    const savedContent = localStorage.getItem('freewrite-current-content');
+    if (savedContent && savedContent.trim()) {
+        editor.textContent = savedContent;
+        updatePlaceholderVisibility();
+    }
+}
+
+// Download current content as markdown file
+function downloadMarkdown() {
+    const content = editor.textContent.trim();
+    if (!content) {
+        alert('Nothing to download! Write something first.');
+        return;
+    }
+    
+    // Create filename with current date
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    const filename = `freewrite-${dateStr}-${timeStr}.md`;
+    
+    // Create download
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // Show success message
+    showNotification(`📥 Downloaded: ${filename}`);
+}
+
+// Upload and load markdown file
+function uploadMarkdown(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['.md', '.markdown', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(fileExtension)) {
+        alert('Please upload a valid markdown file (.md, .markdown, or .txt)');
+        return;
+    }
+    
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const content = e.target.result;
+        
+        // Confirm before replacing current content
+        if (editor.textContent.trim() && 
+            !confirm('This will replace your current content. Continue?')) {
+            return;
+        }
+        
+        // Load content into editor
+        editor.textContent = content;
+        saveCurrentContent(); // Save to localStorage
+        updatePlaceholderVisibility();
+        
+        // Create new entry with uploaded content
+        selectedEntry = null; // Clear current selection
+        saveCurrentEntry(); // This will create a new entry
+        
+        // Show success message
+        showNotification(`📤 Uploaded: ${file.name}`);
+        
+        // Close sidebar
+        closeSidebar();
+    };
+    
+    reader.readAsText(file);
+    
+    // Clear the input so the same file can be uploaded again
+    event.target.value = '';
+}
+
+// Simple notification system
+function showNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--popup-bg);
+        color: var(--text-color);
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid var(--popup-border);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateX(100%);
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
 }
 
 // Auto-save every 10 seconds

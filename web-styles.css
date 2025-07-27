@@ -376,6 +376,39 @@ body, html {
   padding: 10px;
 }
 
+.sidebar-footer {
+  padding: 15px;
+  border-top: 1px solid var(--separator-color);
+  background: var(--sidebar-bg);
+}
+
+.sidebar-btn {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--control-hover);
+  border: 1px solid var(--popup-border);
+  border-radius: 6px;
+  color: var(--control-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sidebar-btn:hover {
+  background: var(--entry-hover-bg);
+  color: var(--control-text-hover);
+  border-color: var(--control-text);
+}
+
+.sidebar-btn:last-child {
+  margin-bottom: 0;
+}
+
 .entry-item {
   padding: 12px;
   border-radius: 8px;
